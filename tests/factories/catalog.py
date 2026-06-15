@@ -1,8 +1,6 @@
 import factory
 
-from catalog.models.game_models import Game
-from catalog.models.genre_models import Genre
-from catalog.models.platform_models import Platform
+from catalog.models import Game, Genre, Platform
 
 
 class GenreFactory(factory.django.DjangoModelFactory):

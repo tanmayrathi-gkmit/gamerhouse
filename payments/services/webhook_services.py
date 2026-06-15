@@ -51,6 +51,50 @@ class WebhookService:
         return webhook_event
 
     @staticmethod
+    def _resolve_payment(payload: Dict[str, Any], webhook_event: WebhookEvent):
+        """
+        Extract order/payment IDs from a webhook payload and load the locked Payment.
+
+        On a missing field or unknown order, marks the webhook_event FAILED, saves it,
+        and returns None. On success returns (payment, razorpay_payment_id).
+        """
+        payment_entity = (
+            payload.get("payload", {}).get("payment", {}).get("entity", {})
+        )
+
+        razorpay_order_id = payment_entity.get("order_id")
+        razorpay_payment_id = payment_entity.get("id")
+
+        if not razorpay_order_id or not razorpay_payment_id:
+            logger.error(
+                "Missing order_id or payment_id in webhook payload",
+                extra={"correlation_id": get_correlation_id()},
+            )
+            webhook_event.status = WebhookEventStatus.FAILED
+            webhook_event.error_message = "Missing required fields in payload"
+            webhook_event.save()
+            return None
+
+        try:
+            payment = Payment.objects.select_for_update().get(
+                razorpay_order_id=razorpay_order_id
+            )
+        except Payment.DoesNotExist:
+            logger.error(
+                f"Payment not found for order_id: {razorpay_order_id}",
+                extra={
+                    "correlation_id": get_correlation_id(),
+                    "order_id": razorpay_order_id,
+                },
+            )
+            webhook_event.status = WebhookEventStatus.FAILED
+            webhook_event.error_message = f"Payment not found: {razorpay_order_id}"
+            webhook_event.save()
+            return None
+
+        return (payment, razorpay_payment_id)
+
+    @staticmethod
     @transaction.atomic
     def process_payment_captured(
         payload: Dict[str, Any], webhook_event: WebhookEvent
@@ -59,39 +103,10 @@ class WebhookService:
         Process payment.captured webhook event.
         """
         try:
-            payment_entity = (
-                payload.get("payload", {}).get("payment", {}).get("entity", {})
-            )
-
-            razorpay_order_id = payment_entity.get("order_id")
-            razorpay_payment_id = payment_entity.get("id")
-
-            if not razorpay_order_id or not razorpay_payment_id:
-                logger.error(
-                    "Missing order_id or payment_id in webhook payload",
-                    extra={"correlation_id": get_correlation_id()},
-                )
-                webhook_event.status = WebhookEventStatus.FAILED
-                webhook_event.error_message = "Missing required fields in payload"
-                webhook_event.save()
+            resolved = WebhookService._resolve_payment(payload, webhook_event)
+            if resolved is None:
                 return False
-
-            try:
-                payment = Payment.objects.select_for_update().get(
-                    razorpay_order_id=razorpay_order_id
-                )
-            except Payment.DoesNotExist:
-                logger.error(
-                    f"Payment not found for order_id: {razorpay_order_id}",
-                    extra={
-                        "correlation_id": get_correlation_id(),
-                        "order_id": razorpay_order_id,
-                    },
-                )
-                webhook_event.status = WebhookEventStatus.FAILED
-                webhook_event.error_message = f"Payment not found: {razorpay_order_id}"
-                webhook_event.save()
-                return False
+            payment, razorpay_payment_id = resolved
 
             if payment.status in [PaymentStatus.VERIFIED, PaymentStatus.ACTIVATED]:
                 logger.info(
@@ -160,39 +175,10 @@ class WebhookService:
         Process payment.failed webhook event.
         """
         try:
-            payment_entity = (
-                payload.get("payload", {}).get("payment", {}).get("entity", {})
-            )
-
-            razorpay_order_id = payment_entity.get("order_id")
-            razorpay_payment_id = payment_entity.get("id")
-
-            if not razorpay_order_id or not razorpay_payment_id:
-                logger.error(
-                    "Missing order_id or payment_id in webhook payload",
-                    extra={"correlation_id": get_correlation_id()},
-                )
-                webhook_event.status = WebhookEventStatus.FAILED
-                webhook_event.error_message = "Missing required fields in payload"
-                webhook_event.save()
+            resolved = WebhookService._resolve_payment(payload, webhook_event)
+            if resolved is None:
                 return False
-
-            try:
-                payment = Payment.objects.select_for_update().get(
-                    razorpay_order_id=razorpay_order_id
-                )
-            except Payment.DoesNotExist:
-                logger.error(
-                    f"Payment not found for order_id: {razorpay_order_id}",
-                    extra={
-                        "correlation_id": get_correlation_id(),
-                        "order_id": razorpay_order_id,
-                    },
-                )
-                webhook_event.status = WebhookEventStatus.FAILED
-                webhook_event.error_message = f"Payment not found: {razorpay_order_id}"
-                webhook_event.save()
-                return False
+            payment, razorpay_payment_id = resolved
 
             if payment.status in [
                 PaymentStatus.VERIFIED,

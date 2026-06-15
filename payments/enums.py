@@ -7,7 +7,6 @@ class PaymentStatus(TextChoices):
     """
 
     CREATED = "created", "Created"
-    AUTHORIZED = "authorized", "Authorized"
     PAID = "paid", "Paid"
     VERIFIED = "verified", "Verified"
     ACTIVATED = "activated", "Activated"
@@ -22,7 +21,6 @@ class SubscriptionStatus(TextChoices):
     """
 
     NONE = "none", "No Subscription"
-    PENDING = "pending", "Pending"
     ACTIVE = "active", "Active"
     EXPIRED = "expired", "Expired"
 

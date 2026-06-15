@@ -6,14 +6,17 @@ import string
 from django.conf import settings
 
 
-def generate_email_verification_token(email: str) -> str:
+def _generate_token(email: str) -> str:
     raw = f"{email}{secrets.token_urlsafe(32)}{settings.SECRET_KEY}"
     return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def generate_email_verification_token(email: str) -> str:
+    return _generate_token(email)
 
 
 def generate_password_reset_token(email: str) -> str:
-    raw = f"{email}{secrets.token_urlsafe(32)}{settings.SECRET_KEY}"
-    return hashlib.sha256(raw.encode()).hexdigest()
+    return _generate_token(email)
 
 
 def generate_otp(length=6):

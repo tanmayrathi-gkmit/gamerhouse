@@ -13,7 +13,7 @@ from .user_serializers import (
     UserSerializer,
 )
 
-__all_ = [
+__all__ = [
     "RegisterSerializer",
     "LoginSerializer",
     "LogoutSerializer",
@@ -23,6 +23,5 @@ __all_ = [
     "UserCreateSerializer",
     "ResetPasswordSerializer",
     "ForgotPasswordSerializer",
-    "ResetPasswordSerializer",
     "CustomTokenObtainPairSerializer",
 ]

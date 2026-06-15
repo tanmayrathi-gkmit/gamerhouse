@@ -4,8 +4,6 @@ Payment-related constants and configuration.
 
 # Premium Subscription Pricing
 PREMIUM_PRICE_INR = 499  # Amount in INR
-PREMIUM_PRICE_PAISE = PREMIUM_PRICE_INR * 100  # Amount in paise for Razorpay
-
 # Payment Configuration
 PAYMENT_CURRENCY = "INR"
 PAYMENT_CAPTURE_MODE = 1  # Auto-capture

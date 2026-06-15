@@ -8,7 +8,6 @@ from users.helper.auth_tokens import (
     blacklist_all_refresh_tokens_for_user,
     revoke_access_token,
 )
-from users.helper.user_create_helper import update_user_fields
 
 User = get_user_model()
 
@@ -73,11 +72,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
             raise PermissionDenied("You cannot create users.")
 
         if existing_user:
-            update_user_fields(
-                existing_user,
-                validated_data,
-                skip_fields=["password", "role", "tenant"],
-            )
+            for field, value in validated_data.items():
+                if field not in ["password", "role", "tenant"]:
+                    setattr(existing_user, field, value)
             existing_user.role = role
             existing_user.tenant = tenant
             existing_user.set_password(validated_data["password"])

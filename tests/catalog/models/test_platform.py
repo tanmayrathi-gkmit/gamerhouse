@@ -37,7 +37,7 @@ class TestPlatformModel:
         platform.delete()
 
         assert platform.deleted_at is not None
-        from catalog.models.platform_models import Platform
+        from catalog.models import Platform
 
         assert Platform.objects.filter(id=platform.id).count() == 0
         assert Platform.all_objects.filter(id=platform.id).count() == 1

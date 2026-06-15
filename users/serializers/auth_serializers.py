@@ -8,7 +8,6 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from core.enums import Roles, TenantStatus
 from tenants.models import Tenant
 from users.helper.auth_tokens import blacklist_refresh_token, revoke_access_token
-from users.helper.user_create_helper import update_user_fields
 
 User = get_user_model()
 
@@ -97,7 +96,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         role = Roles.GAMER
         validated_data["tenant_id"] = tenant_id
         if existing_user:
-            update_user_fields(existing_user, validated_data, skip_fields=["password"])
+            for field, value in validated_data.items():
+                if field not in ["password"]:
+                    setattr(existing_user, field, value)
             existing_user.set_password(validated_data["password"])
             existing_user.role = role
             existing_user.save()

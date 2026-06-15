@@ -25,7 +25,7 @@ class TestGenreModel:
         genre.delete()
 
         assert genre.deleted_at is not None
-        from catalog.models.genre_models import Genre
+        from catalog.models import Genre
 
         assert Genre.objects.filter(id=genre.id).count() == 0
         assert Genre.all_objects.filter(id=genre.id).count() == 1
